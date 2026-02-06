@@ -86,3 +86,32 @@ def upload_to_r2(r2_client, bucket: str, local_path: str, object_name: str):
     )
 
     return object_name
+
+
+def upload_saved_model_to_r2(r2_client, bucket: str, local_path: str, object_name: str):
+    r2_client.upload_file(
+        local_path,
+        bucket,
+        object_name
+    )
+
+
+
+def download_saved_models_from_r2(r2_client, bucket_name: str, download_path: str):
+    r2_saved_model_keys = [
+        "ml_saved_models/animal_ckpt_best.pth",
+        "ml_saved_models/person_ckpt_best.pth",
+        "ml_saved_models/vitb_256_mae_ce_32x4_ep300.pth"
+    ]
+
+    os.makedirs(download_path, exist_ok=True)  # 디렉토리 생성
+
+    for key in r2_saved_model_keys:
+        filename = os.path.basename(key)  # animal_ckpt_best.pth
+        local_path = os.path.join(download_path, filename)
+
+        if os.path.exists(local_path):
+            continue
+
+        with open(local_path, "wb") as f:
+            r2_client.download_fileobj(bucket_name, key, f)

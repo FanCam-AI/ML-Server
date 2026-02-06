@@ -1,12 +1,13 @@
-from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api
+from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api, download_saved_models_from_r2
 import redis
 from tracking import Tracking, OSTrackTracker
 from ml_service import FaceRecognition,FaceDetection
 import boto3
 import os
-
+import runpod
 
 def process_result(event):
+
     temp_paths = None
     face_detection = None
     data = event.get("input", {})
@@ -22,7 +23,6 @@ def process_result(event):
     r2_bucket_name = os.environ.get("R2_BUCKET_NAME")
     redis_cloud_host = os.environ.get("REDIS_CLOUD_HOST")
     redis_cloud_password = os.environ.get("REDIS_CLOUD_PASSWORD")
-
 
     # required_fields = [
     #     "video_key", "target_image_keys", "spot_list", "video_or_gif",
@@ -50,6 +50,11 @@ def process_result(event):
         region_name="auto",
     )
 
+    download_saved_models_from_r2(
+        r2_client=r2_client,
+        bucket_name=r2_bucket_name,
+        download_path="tracking/saved_models"
+    )
 
     try:
         temp_paths = download_r2_keys_to_temp(
@@ -115,3 +120,5 @@ def process_result(event):
             target_image_keys
         )
 
+
+runpod.serverless.start({"handler": process_result})

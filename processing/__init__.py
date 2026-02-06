@@ -7,3 +7,4 @@ from .r2_service import cleanup_r2_objects
 from .r2_service import cleanup_temp_files
 from .r2_service import upload_to_r2
 from .save_result import call_save_result_api
+from .r2_service import download_saved_models_from_r2
