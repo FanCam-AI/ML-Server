@@ -63,7 +63,7 @@ def cleanup_r2_objects(r2_client, bucket_name, video_key, target_image_keys):
     if not keys:
         return
 
-    # 🔥 실제 R2 삭제
+
     r2_client.delete_objects(
         Bucket=bucket_name,
         Delete={
