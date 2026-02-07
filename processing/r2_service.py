@@ -104,7 +104,7 @@ def download_saved_models_from_r2(r2_client, bucket_name: str, download_path: st
         "ml_saved_models/vitb_256_mae_ce_32x4_ep300.pth"
     ]
 
-    os.makedirs(download_path, exist_ok=True)  # 디렉토리 생성
+    os.makedirs(download_path, exist_ok=True)
 
     for key in r2_saved_model_keys:
         filename = os.path.basename(key)  # animal_ckpt_best.pth
