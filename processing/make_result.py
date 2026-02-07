@@ -13,7 +13,6 @@ GIF_DIR = os.path.join(BASE_DIR, "result", "gif")
 os.makedirs(GIF_DIR, exist_ok=True)
 
 
-# 폴더 자동 생성
 
 class MakeResult:
     def __init__(self,tracking, video_path, spot_list, user_id, r2_client, bucket_name, redis_client):
