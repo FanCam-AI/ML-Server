@@ -1,13 +1,13 @@
-from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api, download_saved_models_from_r2
+from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api, download_saved_models_from_r2, call_get_current_user_id_api
 import redis
 from tracking import Tracking, OSTrackTracker
 from ml_service import FaceRecognition,FaceDetection
 import boto3
-import os
+from cryptography.fernet import Fernet
 import runpod
+from config import settings
 
 def process_result(event):
-
     temp_paths = None
     face_detection = None
     data = event.get("input", {})
@@ -16,50 +16,38 @@ def process_result(event):
     spot_list = data.get("spot_list")
     video_or_gif = data.get("video_or_gif")
     detection_model_name = data.get("detection_model_name")
-    current_user_id = data.get("current_user_id")
-    user_token = data.get("user_token")
-    r2_access_key= os.environ.get("R2_ACCESS_KEY")
-    r2_secret_key = os.environ.get("R2_SECRET_KEY")
-    r2_bucket_name = os.environ.get("R2_BUCKET_NAME")
-    redis_cloud_host = os.environ.get("REDIS_CLOUD_HOST")
-    redis_cloud_password = os.environ.get("REDIS_CLOUD_PASSWORD")
+    encrypted_token = data.get("encrypted_token")
+    f = Fernet(settings.FERNET_KEY)
+    user_token = f.decrypt(encrypted_token.encode()).decode()
+    current_user_id = call_get_current_user_id_api(user_token=user_token)
 
-    # required_fields = [
-    #     "video_key", "target_image_keys", "spot_list", "video_or_gif",
-    #     "detection_model_name", "current_user_id",
-    #     "r2_access_key", "r2_secret_key", "bucket_name", "user_token"
-    # ]
-    #
-    # missing = [f for f in required_fields if not data.get(f)]
-    # if missing:
-    #     pass
 
     redis_client = redis.Redis(
-        host=redis_cloud_host,
+        host=settings.REDIS_CLOUD_HOST,
         port=19268,
         decode_responses=True,
         username="default",
-        password=redis_cloud_password,
+        password=settings.REDIS_CLOUD_PASSWORD,
     )
 
     r2_client = boto3.client(
         "s3",
-        endpoint_url="https://9e72ad6e1ccbc2422d24710d0f840b83.r2.cloudflarestorage.com",
-        aws_access_key_id=r2_access_key,
-        aws_secret_access_key=r2_secret_key,
+        endpoint_url=settings.R2_ENDPOINT_URL,
+        aws_access_key_id=settings.R2_ACCESS_KEY,
+        aws_secret_access_key=settings.R2_SECRET_KEY,
         region_name="auto",
     )
 
     download_saved_models_from_r2(
         r2_client=r2_client,
-        bucket_name=r2_bucket_name,
+        bucket_name=settings.R2_BUCKET_NAME,
         download_path="tracking/saved_models"
     )
 
     try:
         temp_paths = download_r2_keys_to_temp(
             r2_client=r2_client,
-            bucket_name=r2_bucket_name,
+            bucket_name=settings.R2_BUCKET_NAME,
             video_key=video_key,
             target_image_keys=target_image_keys
         )
@@ -89,7 +77,7 @@ def process_result(event):
             redis_client=redis_client
         )
 
-        make_result = MakeResult(tracking, video_path, spot_list, current_user_id, r2_client, r2_bucket_name, redis_client)
+        make_result = MakeResult(tracking, video_path, spot_list, current_user_id, r2_client, settings.R2_BUCKET_NAME, redis_client)
 
         if video_or_gif == "video":
             output_path_list = make_result.make_video()
@@ -107,15 +95,15 @@ def process_result(event):
         redis_client.set(f"job_progress:{current_user_id}", 100, ex=3600)
 
 
-    except Exception as e:
+    except Exception:
         redis_client.set(f"job_status:{current_user_id}", "error", ex=3600)
-        raise e
+        raise
 
     finally:
         cleanup_temp_files(temp_paths)
         cleanup_r2_objects(
             r2_client,
-            r2_bucket_name,
+            settings.R2_BUCKET_NAME,
             video_key,
             target_image_keys
         )

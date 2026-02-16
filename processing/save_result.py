@@ -17,6 +17,6 @@ def call_save_result_api(output_path, file_type, user_token):
         response = client.post(API_URL, data=data, headers=headers)
 
     if response.status_code != 200:
-        raise Exception(f"Result 저장 실패: {response.text}")
+        raise Exception("Failed save result")
 
     return response.json()
