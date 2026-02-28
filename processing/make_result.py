@@ -5,8 +5,8 @@ import os
 import secrets
 from pathlib import Path
 from contextlib import suppress
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VIDEO_DIR = os.path.join(BASE_DIR, "result", "video")
 os.makedirs(VIDEO_DIR, exist_ok=True)
 GIF_DIR = os.path.join(BASE_DIR, "result", "gif")
@@ -15,13 +15,15 @@ os.makedirs(GIF_DIR, exist_ok=True)
 
 
 class MakeResult:
-    def __init__(self,tracking, video_path, spot_list, user_id, r2_client, bucket_name, redis_client):
+    def __init__(self,tracking, video_path, spot_list, user_id, r2_client, bucket_name, tracking_mode, drag_box, redis_client):
         self.tracking = tracking
         self.spot_list = spot_list
         self.video_path = video_path
         self.user_id = user_id
         self.r2_client = r2_client
         self.bucket_name = bucket_name
+        self.tracking_mode = tracking_mode
+        self.drag_box = drag_box
         self.redis_client = redis_client
 
     @staticmethod
@@ -48,7 +50,11 @@ class MakeResult:
             start_second = start_time[0] * 3600 + start_time[1] * 60 + start_time[2]
             end_second = end_time[0] * 3600 + end_time[1] * 60 + end_time[2]
             print(start_second, end_second)
-            self.tracking.tracking_idol(start_time=start_second, end_time=end_second, user_id=self.user_id)
+            if self.tracking_mode == "precision":
+                self.tracking.precision_mode(start_time=start_second, end_time=end_second, user_id=self.user_id)
+            elif self.tracking_mode == "normal":
+                self.tracking.normal_mode(start_time=start_second, end_time=end_second, user_id=self.user_id, drag_box=self.drag_box)
+
             base_name = os.path.basename(self.video_path)
             base, ext = os.path.splitext(self.video_path)
             processed_video_path = f"{base}_output.mp4"
@@ -57,11 +63,13 @@ class MakeResult:
             self.redis_client.set(f"job_progress:{self.user_id}", 95, ex=3600)
             output_path = os.path.join(GIF_DIR, f"{unique_filename}.gif")
             r2_object_name = f"result/gif/{unique_filename}.gif"
+            content_type ="image/gif"
             upload_to_r2(
                 r2_client=self.r2_client,
                 bucket=self.bucket_name,
                 local_path=output_path,
-                object_name=r2_object_name
+                object_name=r2_object_name,
+                content_type=content_type
             )
             output_path_list.append(r2_object_name)
             self.remove_if_exists(processed_video_path)
@@ -80,7 +88,10 @@ class MakeResult:
             start_second = start_time[0] * 3600 + start_time[1] * 60 + start_time[2]
             end_second = end_time[0] * 3600 + end_time[1] * 60 + end_time[2]
             print(start_second, end_second)
-            self.tracking.tracking_idol(start_time=start_second, end_time=end_second, user_id= self.user_id,visualize=False)
+            if self.tracking_mode == "precision":
+                self.tracking.precision_mode(start_time=start_second, end_time=end_second, user_id=self.user_id, drag_box=self.drag_box)
+            elif self.tracking_mode == "normal":
+                self.tracking.normal_mode(start_time=start_second, end_time=end_second, user_id=self.user_id, drag_box=self.drag_box)
             base_name = os.path.basename(self.video_path)
             base, ext = os.path.splitext(self.video_path)
             processed_video_path = f"{base}_output.mp4"
@@ -92,11 +103,13 @@ class MakeResult:
             self.redis_client.set(f"job_progress:{self.user_id}", 95, ex=3600)
             output_path = os.path.join(VIDEO_DIR, f"{unique_filename}.mp4")
             r2_object_name = f"result/video/{unique_filename}.mp4"
+            content_type = "video/mp4"
             upload_to_r2(
                 r2_client=self.r2_client,
                 bucket=self.bucket_name,
                 local_path=output_path,
-                object_name=r2_object_name
+                object_name=r2_object_name,
+                content_type=content_type
             )
             output_path_list.append(r2_object_name)
             self.remove_if_exists(processed_video_path)

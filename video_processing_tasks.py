@@ -16,11 +16,12 @@ def process_result(event):
     spot_list = data.get("spot_list")
     video_or_gif = data.get("video_or_gif")
     detection_model_name = data.get("detection_model_name")
+    drag_box = data.get("drag_box")
+    tracking_mode = data.get("tracking_mode")
     encrypted_token = data.get("encrypted_token")
     f = Fernet(settings.FERNET_KEY)
     user_token = f.decrypt(encrypted_token.encode()).decode()
     current_user_id = call_get_current_user_id_api(user_token=user_token)
-
 
     redis_client = redis.Redis(
         host=settings.REDIS_CLOUD_HOST,
@@ -69,7 +70,7 @@ def process_result(event):
 
         tracking = Tracking(
             tracker=OSTrackTracker(),
-             video_path=video_path,
+            video_path=video_path,
             query_image_paths=target_image_paths,
             face_detection=face_detection,
             face_recognition=face_recognition,
@@ -77,7 +78,7 @@ def process_result(event):
             redis_client=redis_client
         )
 
-        make_result = MakeResult(tracking, video_path, spot_list, current_user_id, r2_client, settings.R2_BUCKET_NAME, redis_client)
+        make_result = MakeResult(tracking, video_path, spot_list, current_user_id, r2_client, settings.R2_BUCKET_NAME, tracking_mode, drag_box, redis_client)
 
         if video_or_gif == "video":
             output_path_list = make_result.make_video()

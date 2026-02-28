@@ -74,13 +74,13 @@ def cleanup_r2_objects(r2_client, bucket_name, video_key, target_image_keys):
 
 
 
-def upload_to_r2(r2_client, bucket: str, local_path: str, object_name: str):
+def upload_to_r2(r2_client, bucket: str, local_path: str, object_name: str, content_type: str):
     r2_client.upload_file(
         local_path,
         bucket,
         object_name,
         ExtraArgs={
-            "ContentType": "image/gif",
+            "ContentType": content_type,
             "ACL": "public-read"   # 필요 없으면 제거
         }
     )
