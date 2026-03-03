@@ -1,6 +1,6 @@
 import httpx
 
-API_URL = "https://fancamai.com/api/result/save_result"
+API_URL = "https://fancamai.com/result/save_result"
 
 def call_save_result_api(output_path, file_type, user_token):
     data = {

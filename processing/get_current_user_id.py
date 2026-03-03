@@ -1,6 +1,6 @@
 import httpx
 
-API_URL = "https://fancamai.com/api/result/get_current_user_id"
+API_URL = "https://fancamai.com/user/get_current_user_id"
 
 def call_get_current_user_id_api(user_token):
 
