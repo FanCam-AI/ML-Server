@@ -82,7 +82,7 @@ def process_result(event):
 
         if video_or_gif == "video":
             output_path_list = make_result.make_video()
-            file_type = "result/video/mp4"
+            file_type = "video/mp4"
         elif video_or_gif == "gif":
             output_path_list = make_result.make_gif()
             file_type = "image/gif"
