@@ -51,7 +51,7 @@ class MakeResult:
             end_second = end_time[0] * 3600 + end_time[1] * 60 + end_time[2]
             print(start_second, end_second)
             if self.tracking_mode == "precision":
-                self.tracking.precision_mode(start_time=start_second, end_time=end_second, user_id=self.user_id)
+                self.tracking.precision_mode(start_time=start_second, end_time=end_second, user_id=self.user_id, drag_box=self.drag_box)
             elif self.tracking_mode == "normal":
                 self.tracking.normal_mode(start_time=start_second, end_time=end_second, user_id=self.user_id, drag_box=self.drag_box)
 
