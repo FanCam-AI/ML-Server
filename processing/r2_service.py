@@ -21,7 +21,9 @@ def download_r2_keys_to_temp(
 
     # ---------- video key ----------
     if video_key:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video:
+        _, ext = os.path.splitext(video_key)
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_video:
             r2_client.download_fileobj(bucket_name, video_key, temp_video)
             temp_paths["video_path"] = temp_video.name
 
