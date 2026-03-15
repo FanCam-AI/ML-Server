@@ -1,5 +1,6 @@
 import os
 import tempfile
+from .convert_webm_to_mp4 import convert_webm_to_mp4
 
 def download_r2_keys_to_temp(
     r2_client,
@@ -15,7 +16,7 @@ def download_r2_keys_to_temp(
     """
 
     temp_paths = {
-        "video_path": None,
+        "video_path": str(),
         "image_paths": []
     }
 
@@ -25,7 +26,14 @@ def download_r2_keys_to_temp(
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_video:
             r2_client.download_fileobj(bucket_name, video_key, temp_video)
-            temp_paths["video_path"] = temp_video.name
+            temp_video_path = temp_video.name
+
+            if ext == ".webm":
+                mp4_path = convert_webm_to_mp4(temp_video_path)
+                os.remove(temp_video_path)
+                temp_paths["video_path"] = mp4_path
+            else:
+                temp_paths["video_path"] = temp_video_path
 
     # ---------- target image keys ----------
     if target_image_keys:
