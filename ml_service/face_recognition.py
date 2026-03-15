@@ -9,10 +9,17 @@ class FaceRecognition:
     def __init__(self, device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
+        self.model_path = "./dinov2-base"
+        self.processor = AutoImageProcessor.from_pretrained(
+            self.model_path,
+            local_files_only=True
+        )
 
-        self.model_id = "facebook/dinov2-base"
-        self.processor = AutoImageProcessor.from_pretrained(self.model_id)
-        self.embedder = AutoModel.from_pretrained(self.model_id).to(self.device)
+        self.embedder = AutoModel.from_pretrained(
+            self.model_path,
+            local_files_only=True
+        ).to(self.device)
+
         self.embedder.eval()
 
     @torch.no_grad()
