@@ -6,6 +6,7 @@ from .r2_service import download_r2_keys_to_temp
 from .r2_service import cleanup_r2_objects
 from .r2_service import cleanup_temp_files
 from .r2_service import upload_to_r2
+from .r2_service import download_dino_v2_base_from_r2
 from .save_result import call_save_result_api
 from .r2_service import download_saved_models_from_r2
 from .get_current_user_id import call_get_current_user_id_api
