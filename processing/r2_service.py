@@ -125,3 +125,23 @@ def download_saved_models_from_r2(r2_client, bucket_name: str, download_path: st
 
         with open(local_path, "wb") as f:
             r2_client.download_fileobj(bucket_name, key, f)
+
+
+def download_dino_v2_base_from_r2(r2_client, bucket_name: str, download_path: str):
+    r2_dino_v2_base_keys = [
+        "dino_v2_base/config.json",
+        "dino_v2_base/model.safetensors",
+        "dino_v2_base/preprocessor_config.json"
+    ]
+
+    os.makedirs(download_path, exist_ok=True)
+
+    for key in r2_dino_v2_base_keys:
+        filename = os.path.basename(key)
+        local_path = os.path.join(download_path, filename)
+
+        if os.path.exists(local_path):
+            continue
+
+        with open(local_path, "wb") as f:
+            r2_client.download_fileobj(bucket_name, key, f)

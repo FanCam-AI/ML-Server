@@ -3,13 +3,15 @@ import torch.nn.functional as F
 import numpy as np
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModel
+import os
 
 
 class FaceRecognition:
     def __init__(self, device=None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.model_path = os.path.join(base_dir, "dinov2-base")
 
-        self.model_path = "./dinov2-base"
         self.processor = AutoImageProcessor.from_pretrained(
             self.model_path,
             local_files_only=True

@@ -45,6 +45,12 @@ def process_result(event):
         download_path="tracking/saved_models"
     )
 
+    download_dino_v2_base_from_r2(
+        r2_client=r2_client,
+        bucket_name=settings.R2_BUCKET_NAME,
+        download_path="ml_service/dinov2-base"
+    )
+
     try:
         temp_paths = download_r2_keys_to_temp(
             r2_client=r2_client,
