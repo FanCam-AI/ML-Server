@@ -1,4 +1,4 @@
-from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api, download_saved_models_from_r2, call_get_current_user_id_api
+from processing import MakeResult, cleanup_temp_files, download_r2_keys_to_temp, cleanup_r2_objects, call_save_result_api, download_saved_models_from_r2, download_dino_v2_base_from_r2, call_get_current_user_id_api
 import redis
 from tracking import Tracking, OSTrackTracker
 from ml_service import FaceRecognition,FaceDetection
