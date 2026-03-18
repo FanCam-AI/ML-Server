@@ -12,15 +12,19 @@ class FaceRecognition:
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
         self.model_path = os.path.join(self.base_dir, "dinov2-base")
 
-        self.processor = AutoImageProcessor.from_pretrained(
-            self.model_path,
-            local_files_only=True
-        )
+        # self.processor = AutoImageProcessor.from_pretrained(
+        #     self.model_path,
+        #     local_files_only=True
+        # )
+        #
+        # self.embedder = AutoModel.from_pretrained(
+        #     self.model_path,
+        #     local_files_only=True
+        # ).to(self.device)
 
-        self.embedder = AutoModel.from_pretrained(
-            self.model_path,
-            local_files_only=True
-        ).to(self.device)
+        self.model_id = "facebook/dinov2-base"
+        self.processor = AutoImageProcessor.from_pretrained(self.model_id)
+        self.embedder = AutoModel.from_pretrained(self.model_id).to(self.device)
 
         self.embedder.eval()
 
