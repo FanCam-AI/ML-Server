@@ -8,6 +8,8 @@ def convert_webm_to_mp4(webm_path):
         "ffmpeg",
         "-y",
         "-i", webm_path,
+        "-r", "60",
+        "-vsync", "cfr",
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
