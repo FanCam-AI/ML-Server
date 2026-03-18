@@ -7,6 +7,7 @@ from cryptography.fernet import Fernet
 import runpod
 from config import settings
 
+
 def process_result(event):
     temp_paths = None
     face_detection = None
