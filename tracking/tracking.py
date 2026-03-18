@@ -131,6 +131,8 @@ class Tracking:
         init_threshold_calculated = False
         resized_box = None
         fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps < 10 or fps > 60:
+            fps = 30
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = total_frames / fps if fps > 0 else 0
         if start_time >= duration:
@@ -265,11 +267,11 @@ class Tracking:
             print("target didn't detected in 10 frame")
 
 
-        # if drag_box is not None:
-        #     drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
-        #     out_w = int(drag_resized_box[2])
-        #     out_h = int(drag_resized_box[3])
-        #     self.output_size = (out_w, out_h)
+        if drag_box is not None:
+            drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
+            out_w = int(drag_resized_box[2])
+            out_h = int(drag_resized_box[3])
+            self.output_size = (out_w, out_h)
 
 
 
