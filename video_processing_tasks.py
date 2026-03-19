@@ -4,7 +4,6 @@ from tracking import Tracking, OSTrackTracker
 from ml_service import FaceRecognition,FaceDetection
 import boto3
 from cryptography.fernet import Fernet
-import runpod
 from config import settings
 
 
@@ -115,6 +114,3 @@ def process_result(event):
             video_key,
             target_image_keys
         )
-
-
-runpod.serverless.start({"handler": process_result})
