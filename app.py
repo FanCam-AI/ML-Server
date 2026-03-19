@@ -2,8 +2,9 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from video_processing_tasks import process_result
+from config import settings
 import ray
-
+import uvicorn
 app = FastAPI()
 
 @app.on_event("startup")
@@ -26,10 +27,5 @@ async def process_run(request: Request):
     return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    import uvicorn
 
-    port = int(os.getenv("PORT", 80))
-    print(f"Starting server on port {port}")
-
-    uvicorn.run(app, host="0.0.0.0", port=port)
+uvicorn.run(app, host="0.0.0.0", port=settings.PORT)

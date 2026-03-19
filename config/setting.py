@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     REDIS_CLOUD_HOST: str
     REDIS_CLOUD_PASSWORD: str
     FERNET_KEY: str
+    PORT:int
+    PORT_HEALTH:int
 
 
     # pydantic v2 config
