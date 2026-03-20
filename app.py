@@ -31,7 +31,7 @@ async def process_run(request: Request):
         input_data = data.get("input", {})
         tracking_mode = input_data.get("tracking_mode")
         if tracking_mode == "normal":
-            normal_process_result_task(input_data)
+            normal_process_result_task.remote(input_data)
         elif tracking_mode == "precision":
             precision_process_result_task.remote(input_data)
     except Exception as e:
