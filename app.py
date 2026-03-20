@@ -13,7 +13,11 @@ async def startup_event():
     ray.init(ignore_reinit_error=True)
 
 @ray.remote(num_gpus=0.25)
-def process_result_task(data):
+def precision_process_result_task(data):
+    return process_result(data)
+
+@ray.remote(num_cpus=1)
+def normal_process_result_task(data):
     return process_result(data)
 
 @app.get("/ping")
@@ -22,11 +26,15 @@ async def health_check():
 
 @app.post("/process_run")
 async def process_run(request: Request):
-    data = await request.json()
     try:
-        process_result_task.remote(data)  # 작업을 백그라운드에서 실행
+        data = await request.json()
+        input_data = event.get("input", {})
+        tracking_mode = data.get("tracking_mode")
+        if tracking_mode == "normal":
+            normal_process_result_task(input_data)
+        elif tracking_mode == "precision":
+            precision_process_result_task.remote(input_data)
     except Exception as e:
-        # Ray 실행 자체가 실패하면 에러 기록
         return {"status": "failed", "error": str(e)}
     return {"status": "ok"}
 

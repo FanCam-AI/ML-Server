@@ -7,10 +7,9 @@ from cryptography.fernet import Fernet
 from config import settings
 
 
-def process_result(event):
+def process_result(data):
     temp_paths = None
     face_detection = None
-    data = event.get("input", {})
     video_key = data.get("video_key")
     target_image_keys = data.get("target_image_keys")
     spot_list = data.get("spot_list")
