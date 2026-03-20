@@ -28,8 +28,8 @@ async def health_check():
 async def process_run(request: Request):
     try:
         data = await request.json()
-        input_data = event.get("input", {})
-        tracking_mode = data.get("tracking_mode")
+        input_data = data.get("input", {})
+        tracking_mode = input_data.get("tracking_mode")
         if tracking_mode == "normal":
             normal_process_result_task(input_data)
         elif tracking_mode == "precision":
