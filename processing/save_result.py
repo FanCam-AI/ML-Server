@@ -14,7 +14,7 @@ def call_save_result_api(output_path, file_type, user_token):
         "Authorization": f"Bearer {user_token}"
     }
 
-    timeout = Timeout(connect=10.0, read=25.0)
+    timeout = Timeout(25.0)
     max_attempts = 2
     retry_delay = 1
 
