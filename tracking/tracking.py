@@ -249,7 +249,7 @@ class Tracking:
         center_rect = self.get_center_bbox(img, box_width=self.output_size[0], box_height=self.output_size[1])
         h_img, w_img = img.shape[:2]
         center_resized_box = self.resize_tracker_bbox(center_rect, w_img, h_img)
-        tracker = self.create_opencv_tracker()
+        tracker = self.create_tracker()
         activate_tracking = False
         first_init_tracker = False
         threshold_calculated = False
@@ -292,11 +292,11 @@ class Tracking:
             if current_frame == init_count and first_init_tracker == False:
                 if activate_tracking:
                     del tracker
-                    tracker = self.create_opencv_tracker()
+                    tracker = self.create_tracker()
                     tracker.init(img, resized_init_rect)
 
                 elif activate_tracking == False and len(resized_init_rect) > 0:
-                    tracker = self.create_opencv_tracker()
+                    tracker = self.create_tracker()
                     tracker.init(img, resized_init_rect)
                     activate_tracking = True
 
@@ -347,7 +347,7 @@ class Tracking:
 
 
                                 del tracker
-                                tracker = self.create_opencv_tracker()
+                                tracker = self.create_tracker()
                                 tracker.init(img, resized_localizing_rect)
                                 skip_distance_check = True
                                 break
@@ -389,7 +389,7 @@ class Tracking:
                 break
         if visualize:
             cv2.destroyAllWindows()
-            # release everything
+
         cap.release()
         out.release()
         self.redis_client.set(f"job_progress:{user_id}", 90, ex=600)
@@ -528,7 +528,7 @@ class Tracking:
         return dark_ratio > dark_ratio_threshold
 
 
-    def create_opencv_tracker(self):
+    def create_tracker(self):
         return self.tracker
 
     @staticmethod
