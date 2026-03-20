@@ -10,7 +10,6 @@ class Tracking:
         self.fit_to = 'height'
         self.tracker = tracker
         self.video_path = video_path
-        self.cap = cv2.VideoCapture(video_path)
         self.fourcc =cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         self.face_detector = face_detection
         self.face_recognizer = face_recognition
@@ -31,6 +30,7 @@ class Tracking:
         max_width = 3840  # 4K의 너비
         aspect_ratio = 9 / 16
 
+        cap = cv2.VideoCapture(video_path)
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         target_height = min(frame_height, max_height)
         target_width = int(target_height * aspect_ratio)
