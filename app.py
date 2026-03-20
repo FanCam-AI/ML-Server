@@ -8,11 +8,11 @@ import uvicorn
 app = FastAPI()
 
 @app.on_event("startup")
-def startup_event():
-    ray.init()
+async def startup_event():
+    import ray
+    ray.init(ignore_reinit_error=True)
 
-
-@ray.remote
+@ray.remote(num_gpus=1)
 def process_result_task(data):
     return process_result(data)
 
@@ -23,7 +23,11 @@ async def health_check():
 @app.post("/process_run")
 async def process_run(request: Request):
     data = await request.json()
-    process_result_task.remote(data)
+    try:
+        process_result_task.remote(data)  # 작업을 백그라운드에서 실행
+    except Exception as e:
+        # Ray 실행 자체가 실패하면 에러 기록
+        return {"status": "failed", "error": str(e)}
     return {"status": "ok"}
 
 
