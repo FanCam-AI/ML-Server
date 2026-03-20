@@ -12,7 +12,7 @@ async def startup_event():
     import ray
     ray.init(ignore_reinit_error=True)
 
-@ray.remote(num_gpus=1)
+@ray.remote(num_gpus=0.25)
 def process_result_task(data):
     return process_result(data)
 
