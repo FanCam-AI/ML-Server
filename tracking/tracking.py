@@ -71,22 +71,29 @@ class Tracking:
         end_frame = round(fps * end_time)
         current_frame = start_frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        drag_resized_box = list()
 
         out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
         ret, img = cap.read()
         img = self.processor.rotate_frame(img)
         h_img, w_img = img.shape[:2]
-        drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
-        out_w = int(drag_resized_box[2])
-        out_h = int(drag_resized_box[3])
-        self.output_size = (out_w, out_h)
+        center_rect = self.get_center_bbox(img, box_width=self.output_size[0], box_height=self.output_size[1])
+        center_resized_box = self.resize_tracker_bbox(center_rect, w_img, h_img)
+
+        if drag_box is not None:
+            drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
+            out_w = int(drag_resized_box[2])
+            out_h = int(drag_resized_box[3])
+            self.output_size = (out_w, out_h)
 
         while True:
             ret, img = cap.read()
             if not ret:
                 break
             img = self.processor.rotate_frame(img)
-            resized_box = drag_resized_box
+            resized_box = center_resized_box
+            if drag_box is not None:
+                resized_box = drag_resized_box
             avg_height_range, avg_width_range, left, right, top, bottom = self.compute_average_move(resized_box)
             result_img = img[avg_height_range[0]:avg_height_range[1], avg_width_range[0]:avg_width_range[1]].copy()
 
