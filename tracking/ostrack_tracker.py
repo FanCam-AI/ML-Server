@@ -60,7 +60,7 @@ class OSTrackTracker:
         self.initialized = True
         return True
 
-    def update(self, frame, distance_threshold=50, skip_distance_check=False):
+    def update(self, frame, distance_threshold=100, skip_distance_check=False):
         if not self.initialized:
             return False, None
 

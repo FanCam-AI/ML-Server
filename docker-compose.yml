@@ -1,0 +1,25 @@
+services:
+  app:
+    image: fancamai-ml-server:latest
+    container_name: app
+    restart: unless-stopped
+    shm_size: 6g
+    gpus: all
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/gcloud/application_default_credentials.json
+      - PORT=80
+      - PORT_HEALTH=80
+
+    volumes:
+      - /home/ep-zero/ML-Server/gcloud:/gcloud
+
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    depends_on:
+      - app

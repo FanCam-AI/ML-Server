@@ -28,7 +28,7 @@ class MakeResult:
 
     @staticmethod
     def secure_filename():
-        unique_filename = secrets.token_urlsafe(16)
+        unique_filename = secrets.token_urlsafe(16).lstrip("-")
         return unique_filename
 
 

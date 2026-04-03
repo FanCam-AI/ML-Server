@@ -1,12 +1,17 @@
 from fastapi import FastAPI, HTTPException, Request, Header, Depends
 from pydantic import BaseModel
-from video_processing_tasks import process_result
+from workers import PrecisionProcessor, NormalProcessor
 from config import settings
 import ray
 import uvicorn
+import asyncio
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 ray.init(ignore_reinit_error=True)
+
+precision_workers = [PrecisionProcessor.remote() for _ in range(settings.PRECISION_WORKER_COUNT)]
+normal_workers = [NormalProcessor.remote() for _ in range(settings.NORMAL_WORKER_COUNT)]
+
 
 def verify_api_key(authorization: str = Header(None)):
     if not authorization:
@@ -36,15 +41,18 @@ def verify_api_key(authorization: str = Header(None)):
     return token
 
 
+async def get_available_worker(workers):
+    results = await asyncio.gather(
+        *[w.is_available.remote() for w in workers]
+    )
+    available_count = sum(results)
+    busy_count = len(results) - available_count
 
+    for w, ok in zip(workers, results):
+        if ok:
+            return w, available_count, busy_count
 
-@ray.remote(num_gpus=0.25)
-def precision_process_result_task(data):
-    return process_result(data)
-
-@ray.remote(num_cpus=1)
-def normal_process_result_task(data):
-    return process_result(data)
+    return None
 
 @app.get("/ping")
 async def health_check():
@@ -53,12 +61,11 @@ async def health_check():
 @app.get("/cpu_ready")
 async def ready(api_key: str = Depends(verify_api_key)):
     try:
-        resources = ray.available_resources()
+        worker, available_count, busy_count = await get_available_worker(normal_workers)
+        if worker is not None:
+            return {"status": "ready", "available_count": available_count, "busy_count": busy_count}
 
-        if resources.get("CPU", 0) < 1:
-            return {"status": "not_ready"}
-
-        return {"status": "ready"}
+        return {"status": "not_ready"}
 
     except Exception:
         return {"status": "not_ready"}
@@ -67,11 +74,11 @@ async def ready(api_key: str = Depends(verify_api_key)):
 @app.get("/gpu_ready")
 async def ready(api_key: str = Depends(verify_api_key)):
     try:
-        resources = ray.available_resources()
-        if resources.get("GPU", 0) < 0.25:
-            return {"status": "not_ready"}
+        worker, available_count, busy_count = await get_available_worker(precision_workers)
+        if worker is not None:
+            return {"status": "ready", "available_count": available_count, "busy_count": busy_count}
 
-        return {"status": "ready"}
+        return {"status": "not_ready"}
 
     except Exception:
         return {"status": "not_ready"}
@@ -84,9 +91,22 @@ async def process_run(request: Request, api_key: str = Depends(verify_api_key)):
         input_data = data.get("input", {})
         tracking_mode = input_data.get("tracking_mode")
         if tracking_mode == "normal":
-            normal_process_result_task.remote(input_data)
+            worker, available_count, busy_count = await get_available_worker(normal_workers)
+
+            if worker is None:
+                return {"status": "busy"}
+
+            worker.process.remote(input_data)
+
         elif tracking_mode == "precision":
-            precision_process_result_task.remote(input_data)
+
+            worker, available_count, busy_count = await get_available_worker(precision_workers)
+
+            if worker is None:
+                return {"status": "busy"}
+
+            worker.process.remote(input_data)
+
     except Exception:
         return {"status": "failed"}
 

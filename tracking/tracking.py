@@ -5,12 +5,13 @@ import numpy as np
 import os
 from processing import AutoRotatedVideoProcessor
 
+
 class Tracking:
     def __init__(self, tracker, video_path, query_image_paths, face_detection, face_recognition, detection_model_name, redis_client):
         self.fit_to = 'height'
         self.tracker = tracker
         self.video_path = video_path
-        self.fourcc =cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        self.fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         self.face_detector = face_detection
         self.face_recognizer = face_recognition
         self.top_bottom_list = []
@@ -25,7 +26,6 @@ class Tracking:
         self.isPortrait = None
         self.redis_client = redis_client
 
-
         max_height = 2160  # 4K의 높이
         max_width = 3840  # 4K의 너비
         aspect_ratio = 9 / 16
@@ -36,23 +36,21 @@ class Tracking:
         target_width = int(target_height * aspect_ratio)
 
         if target_width > max_width:
-
             target_width = max_width
             target_height = int(target_width / aspect_ratio)
 
         processor = AutoRotatedVideoProcessor(self.video_path)
         if processor.is_portrait():
             print("세로 영상")
-            self.output_size = (target_width, target_height-100)
+            self.output_size = (target_width, target_height - 100)
             self.isPortrait = True
         else:
             print("가로 영상")
-            self.output_size = (target_width, target_height-100)
+            self.output_size = (target_width, target_height - 100)
             self.isPortrait = False
 
         print(self.output_size)
         self.output_path = f"{os.path.splitext(video_path)[0]}_output.mp4"
-
 
     def normal_mode(self, start_time, end_time, user_id, drag_box, visualize=False):
         cap = cv2.VideoCapture(self.video_path)
@@ -67,24 +65,24 @@ class Tracking:
             start_time = max(0, duration - 1)
         if end_time > duration:
             end_time = duration
+        start_time = max(start_time, 0.3)
         start_frame = round(fps * start_time)
         end_frame = round(fps * end_time)
         current_frame = start_frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-        drag_resized_box = list()
-
-        out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
         ret, img = cap.read()
         img = self.processor.rotate_frame(img)
         h_img, w_img = img.shape[:2]
-        center_rect = self.get_center_bbox(img, box_width=self.output_size[0], box_height=self.output_size[1])
-        center_resized_box = self.resize_tracker_bbox(center_rect, w_img, h_img)
 
         if drag_box is not None:
-            drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
-            out_w = int(drag_resized_box[2])
-            out_h = int(drag_resized_box[3])
+            out_w = int(drag_box[2])
+            out_h = int(drag_box[3])
             self.output_size = (out_w, out_h)
+
+        out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
+
+        center_rect = self.get_center_bbox(img, box_width=self.output_size[0], box_height=self.output_size[1])
+        center_resized_box = self.resize_tracker_bbox(center_rect, w_img, h_img)
 
         while True:
             ret, img = cap.read()
@@ -93,7 +91,7 @@ class Tracking:
             img = self.processor.rotate_frame(img)
             resized_box = center_resized_box
             if drag_box is not None:
-                resized_box = drag_resized_box
+                resized_box = drag_box
             avg_height_range, avg_width_range, left, right, top, bottom = self.compute_average_move(resized_box)
             result_img = img[avg_height_range[0]:avg_height_range[1], avg_width_range[0]:avg_width_range[1]].copy()
 
@@ -119,18 +117,15 @@ class Tracking:
         out.release()
         self.redis_client.set(f"job_progress:{user_id}", 90, ex=600)
 
-
-
-
     def precision_mode(self, start_time, end_time, user_id, drag_box, visualize=False):
         cap = cv2.VideoCapture(self.video_path)
         if not cap.isOpened():
             print("VideoCapture가 정상적으로 열리지 않았습니다.")
         threshold = None
         if self.detection_model_name == "person":
-            threshold = 0.3
+            threshold = 0.1
         elif self.detection_model_name == "animal":
-            threshold = 0.3
+            threshold = 0.1
 
         print(threshold)
         init_threshold_calculated = False
@@ -147,6 +142,8 @@ class Tracking:
             start_time = max(0, duration - 1)
         if end_time > duration:
             end_time = duration
+
+        start_time = max(start_time, 0.3)
         start_frame = round(fps * start_time)
         end_frame = round(fps * end_time)
         current_frame = start_frame
@@ -159,9 +156,11 @@ class Tracking:
 
         for image in self.query_images:
             query_face_detection_boxes = self.face_detector.detect_face(image=image, visualize=False)
-            closet_center_query_face_bbox = self.face_detector.find_closest_bbox_to_center(image=image,bboxes=query_face_detection_boxes)
+            closet_center_query_face_bbox = self.face_detector.find_closest_bbox_to_center(image=image,
+                                                                                           bboxes=query_face_detection_boxes)
             query_rgb_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            query_faces, _ = self.face_detector.extract_face(closet_center_query_face_bbox, query_rgb_img, visualize=False)
+            query_faces, _ = self.face_detector.extract_face(closet_center_query_face_bbox, query_rgb_img,
+                                                             visualize=False)
 
             if query_faces is not None:
                 for face in query_faces:
@@ -182,9 +181,10 @@ class Tracking:
                 init_img = self.processor.rotate_frame(init_img)
                 face_detection_boxes = self.face_detector.detect_face(init_img, visualize=False)
                 rgb_img = cv2.cvtColor(init_img, cv2.COLOR_BGR2RGB)
-                extracted_faces_arr, extracted_faces_box_arr = self.face_detector.extract_face(face_detection_boxes, rgb_img, visualize=False)
+                extracted_faces_arr, extracted_faces_box_arr = self.face_detector.extract_face(face_detection_boxes,
+                                                                                               rgb_img, visualize=False)
                 processed_frame = init_count - start_frame
-                self.progress = int((processed_frame  / total_frame) * 90)
+                self.progress = int((processed_frame / total_frame) * 90)
                 self.redis_client.set(f"job_progress:{user_id}", self.progress, ex=3600)
 
                 if extracted_faces_arr is not None:
@@ -215,26 +215,55 @@ class Tracking:
                             print("재조정된 1차 threshold:", threshold)
                             init_threshold_calculated = True
 
-
-
                         if min_distance < threshold:
                             init_rect = extracted_faces_box_arr[idx]
                             init_rect = list(init_rect)
                             h_img, w_img = init_img.shape[:2]
                             resized_init_rect = self.resize_tracker_bbox(init_rect, w_img, h_img)
+                            # ✅ drag_box가 있을 때 bbox 크기 강제 통일
+                            if drag_box is not None:
+                                x, y, w, h = init_rect
+
+                                # 중심 유지
+                                cx = x + w / 2
+                                cy = y + h / 2
+
+                                # drag_box 크기 사용
+                                new_w = drag_box[2]
+                                new_h = drag_box[3]
+
+                                resized_init_rect = [
+                                    cx - new_w / 2,
+                                    cy - new_h / 2,
+                                    new_w,
+                                    new_h
+                                ]
+
+                                # (선택) 정수 변환
+                                resized_init_rect = list(map(int, resized_init_rect))
                             scale = 0.6
                             portrait_scale = 0.4
                             print("Init bbox:", resized_init_rect)
                             print("Image shape:", init_img.shape)
 
                             if self.isPortrait:
-                                portrait_out_w = int(resized_init_rect[2] * portrait_scale)
-                                portrait_out_h = int(resized_init_rect[3] * portrait_scale)
-                                self.output_size = (portrait_out_w, portrait_out_h)
+                                if drag_box is not None:
+                                    out_w = int(drag_box[2])
+                                    out_h = int(drag_box[3])
+                                    self.output_size = (out_w, out_h)
+                                else:
+                                    portrait_out_w = int(resized_init_rect[2] * portrait_scale)
+                                    portrait_out_h = int(resized_init_rect[3] * portrait_scale)
+                                    self.output_size = (portrait_out_w, portrait_out_h)
                             else:
-                                out_w = int(resized_init_rect[2] * scale)
-                                out_h = int(resized_init_rect[3] * scale)
-                                self.output_size = (out_w, out_h)
+                                if drag_box is not None:
+                                    out_w = int(drag_box[2])
+                                    out_h = int(drag_box[3])
+                                    self.output_size = (out_w, out_h)
+                                else:
+                                    out_w = int(resized_init_rect[2] * scale)
+                                    out_h = int(resized_init_rect[3] * scale)
+                                    self.output_size = (out_w, out_h)
 
                             print("🔥 Dynamic Output Size:", self.output_size)
                             break
@@ -250,18 +279,24 @@ class Tracking:
             init_count += 1
 
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
-        out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
         ret, img = cap.read()
+        h_img, w_img = img.shape[:2]
+
+        if drag_box is not None:
+            out_w = int(drag_box[2])
+            out_h = int(drag_box[3])
+            self.output_size = (out_w, out_h)
+
+        out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
         img = self.processor.rotate_frame(img)
         center_rect = self.get_center_bbox(img, box_width=self.output_size[0], box_height=self.output_size[1])
-        h_img, w_img = img.shape[:2]
         center_resized_box = self.resize_tracker_bbox(center_rect, w_img, h_img)
         tracker = self.create_tracker()
         activate_tracking = False
         first_init_tracker = False
         threshold_calculated = False
 
-        if  init_count - start_frame <= 10 and len(resized_init_rect) > 0:
+        if init_count - start_frame <= 50 and len(resized_init_rect) > 0:
             activate_tracking = True
             first_init_tracker = True
             tracker.init(img, resized_init_rect)
@@ -274,15 +309,6 @@ class Tracking:
             print(start_frame)
             print(init_count)
             print("target didn't detected in 10 frame")
-
-
-        if drag_box is not None:
-            drag_resized_box = self.resize_tracker_bbox(drag_box, w_img, h_img)
-            out_w = int(drag_resized_box[2])
-            out_h = int(drag_resized_box[3])
-            self.output_size = (out_w, out_h)
-
-
 
         while True:
             print(current_frame)
@@ -315,7 +341,8 @@ class Tracking:
                     face_detection_boxes = self.face_detector.detect_face(img, visualize=False)
                     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     extracted_faces_arr, extracted_faces_box_arr = self.face_detector.extract_face(face_detection_boxes,
-                                                                                                   rgb_img, visualize=False)
+                                                                                                   rgb_img,
+                                                                                                   visualize=False)
                     if extracted_faces_arr is not None:
                         for idx, extracted_face in enumerate(extracted_faces_arr):
                             extracted_face_embedding = self.face_recognizer.get_embedding(extracted_face)
@@ -329,8 +356,7 @@ class Tracking:
                             min_distance = min(l2_distances)
                             print(l2_distances)
 
-
-                            if not threshold_calculated and  0.01 <= min_distance < 0.15:
+                            if not threshold_calculated and 0.01 <= min_distance < 0.15:
                                 min_distance_rounded = round(min_distance, 2)
                                 if baseline_distances.count(min_distance_rounded) < 2:
                                     baseline_distances.append(min_distance_rounded)
@@ -351,7 +377,21 @@ class Tracking:
                                 localizing_rect = list(localizing_rect)
                                 h_img, w_img = img.shape[:2]
                                 resized_localizing_rect = self.resize_tracker_bbox(localizing_rect, w_img, h_img)
+                                if drag_box is not None:
+                                    x, y, w, h = localizing_rect
+                                    cx = x + w / 2
+                                    cy = y + h / 2
 
+                                    new_w = drag_box[2]
+                                    new_h = drag_box[3]
+
+                                    resized_localizing_rect = [
+                                        cx - new_w / 2,
+                                        cy - new_h / 2,
+                                        new_w,
+                                        new_h
+                                    ]
+                                    resized_localizing_rect = list(map(int, resized_localizing_rect))
 
                                 del tracker
                                 tracker = self.create_tracker()
@@ -359,13 +399,13 @@ class Tracking:
                                 skip_distance_check = True
                                 break
 
-
                 if self.is_dark_frame(img) and activate_tracking:
                     print('this frame is black')
                     box = resized_box
 
                 else:
-                    success, box = self.tracker.update(frame=img, distance_threshold=50, skip_distance_check=skip_distance_check)
+                    success, box = self.tracker.update(frame=img, distance_threshold=100,
+                                                       skip_distance_check=skip_distance_check)
                     skip_distance_check = False
 
                 h_img, w_img = img.shape[:2]
@@ -387,7 +427,6 @@ class Tracking:
                 cv2.imshow('img', img)
                 cv2.imshow('result', result_img)
                 cv2.waitKey(1)
-
 
             out.write(result_img)
             current_frame += 1
@@ -469,10 +508,7 @@ class Tracking:
                 avg_center[0] + avg_height * self.output_size[0] / self.output_size[1] / 2
             ]).astype(int).clip(0, 9999)
 
-
-
         return avg_height_range, avg_width_range, left, right, top, bottom
-
 
     def compute_exponential_average_move(self, box, alpha=0.3):
         left, top, w, h = [int(v) for v in box]
@@ -534,7 +570,6 @@ class Tracking:
 
         return dark_ratio > dark_ratio_threshold
 
-
     def create_tracker(self):
         return self.tracker
 
@@ -550,7 +585,6 @@ class Tracking:
             heif_file.stride,
         )
         return np.array(image)
-
 
     def load_image(self, path):
         ext = os.path.splitext(path)[1].lower()
