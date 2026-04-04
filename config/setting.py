@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     FERNET_KEY: str
     PORT:int
     PORT_HEALTH:int
+    NORMAL_WORKER_COUNT:int = 5
+    PRECISION_WORKER_COUNT:int = 4
+    RUNPOD_API_KEY:str
 
 
     # pydantic v2 config
