@@ -12,6 +12,14 @@ venv/
 .venv2/
 venv2/
 
+tracking/saved_models/*.pth
+.tracking/saved_models/*
+
+ml_service/dinov2-base/*
+.ml_service/dinov2-base/*
+cloudflared/*
+gcloud/*
+
 # Git
 .git/
 
