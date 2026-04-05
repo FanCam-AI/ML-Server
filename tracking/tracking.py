@@ -122,10 +122,9 @@ class Tracking:
         if not cap.isOpened():
             print("VideoCapture가 정상적으로 열리지 않았습니다.")
         threshold = None
+
         if self.detection_model_name == "person":
-            threshold = 0.1
-        elif self.detection_model_name == "animal":
-            threshold = 0.1
+            threshold = 0.15
 
         print(threshold)
         init_threshold_calculated = False
@@ -153,6 +152,70 @@ class Tracking:
         resized_init_rect = list()
         baseline_distances = list()
         skip_distance_check = bool()
+
+
+
+        if self.detection_model_name == "object":
+            ret, img = cap.read()
+            img = self.processor.rotate_frame(img)
+            if drag_box is not None:
+                out_w = int(drag_box[2])
+                out_h = int(drag_box[3])
+                self.output_size = (out_w, out_h)
+            out = cv2.VideoWriter(self.output_path, self.fourcc, cap.get(cv2.CAP_PROP_FPS), self.output_size)
+
+
+            self.tracker.init(img, drag_box)
+
+            while True:
+                ret, img = cap.read()
+                if not ret:
+                    break
+                img = self.processor.rotate_frame(img)
+                success, box = self.tracker.update(img)
+                if drag_box is not None:
+                    x, y, w, h = box
+                    cx = x + w / 2
+                    cy = y + h / 2
+
+                    new_w = drag_box[2]
+                    new_h = drag_box[3]
+
+                    resized_rect = [
+                        cx - new_w / 2,
+                        cy - new_h / 2,
+                        new_w,
+                        new_h
+                    ]
+                    resized_rect = list(map(int, resized_rect))
+
+                avg_height_range, avg_width_range, left, right, top, bottom = self.compute_average_move(resized_rect)
+                result_img = img[avg_height_range[0]:avg_height_range[1], avg_width_range[0]:avg_width_range[1]].copy()
+
+                result_img = cv2.resize(result_img, self.output_size)
+                if visualize:
+                    pt1 = (int(left), int(top))
+                    pt2 = (int(right), int(bottom))
+                    cv2.rectangle(img, pt1, pt2, (255, 255, 255), 3)
+
+                    cv2.imshow('img', img)
+                    cv2.imshow('result', result_img)
+                    cv2.waitKey(1)
+
+                out.write(result_img)
+                current_frame += 1
+
+                if current_frame == end_frame:
+                    break
+            if visualize:
+                cv2.destroyAllWindows()
+
+            cap.release()
+            out.release()
+            self.redis_client.set(f"job_progress:{user_id}", 90, ex=600)
+
+            return
+
 
         for image in self.query_images:
             query_face_detection_boxes = self.face_detector.detect_face(image=image, visualize=False)
@@ -200,12 +263,12 @@ class Tracking:
                         ]
                         min_distance = min(l2_distances)
                         print(l2_distances)
-                        if not init_threshold_calculated and 0.01 <= min_distance < 0.15:
-                            min_distance_rounded = round(min_distance, 2)
-                            if baseline_distances.count(min_distance_rounded) < 2:
+                        if not init_threshold_calculated and 0.01 <= min_distance < 0.2:
+                            min_distance_rounded = round(min_distance, 3)
+                            if baseline_distances.count(min_distance_rounded) < 1:
                                 baseline_distances.append(min_distance_rounded)
 
-                        if not init_threshold_calculated and len(baseline_distances) == 15:
+                        if not init_threshold_calculated and len(baseline_distances) == 5:
                             sorted_distances = sorted(baseline_distances)
 
                             mid_index = len(sorted_distances) // 2
@@ -337,7 +400,7 @@ class Tracking:
                 break
 
             if activate_tracking:
-                if current_frame % 10 == 0:
+                if current_frame % 3 == 0:
                     face_detection_boxes = self.face_detector.detect_face(img, visualize=False)
                     rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     extracted_faces_arr, extracted_faces_box_arr = self.face_detector.extract_face(face_detection_boxes,
@@ -356,12 +419,12 @@ class Tracking:
                             min_distance = min(l2_distances)
                             print(l2_distances)
 
-                            if not threshold_calculated and 0.01 <= min_distance < 0.15:
-                                min_distance_rounded = round(min_distance, 2)
-                                if baseline_distances.count(min_distance_rounded) < 2:
+                            if not threshold_calculated and 0.01 <= min_distance < 0.2:
+                                min_distance_rounded = round(min_distance, 3)
+                                if baseline_distances.count(min_distance_rounded) < 1:
                                     baseline_distances.append(min_distance_rounded)
 
-                            if not threshold_calculated and len(baseline_distances) == 30:
+                            if not threshold_calculated and len(baseline_distances) == 10:
                                 sorted_distances = sorted(baseline_distances)
 
                                 mid_index = len(sorted_distances) // 2

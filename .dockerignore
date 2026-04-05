@@ -34,3 +34,10 @@ docker-compose.yml
 tests/
 .cache/
 .pytest_cache/
+
+cloudflared/
+*.json
+*.yml
+
+gcloud/
+*.json

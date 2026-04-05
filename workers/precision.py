@@ -9,7 +9,7 @@ from .core import process_core
 from pathlib import Path
 
 
-@ray.remote(num_cpus=0.5, num_gpus=0.25, max_concurrency=10)
+@ray.remote(num_cpus=1, num_gpus=0.25, max_concurrency=10)
 class PrecisionProcessor:
     def __init__(self):
         self.f = Fernet(settings.FERNET_KEY)
@@ -44,15 +44,10 @@ class PrecisionProcessor:
             download_path="ml_service/dinov2-base"
         )
 
-        self.person_detection = FaceDetection(
+        self.face_detection = FaceDetection(
             detection_model_path=str((self.base_dir / 'tracking/saved_models/person_ckpt_best.pth').resolve()),
             detection_model_name="person"
         )
-
-        self.animal_detection = FaceDetection(
-                    detection_model_path=str((self.base_dir / 'tracking/saved_models/animal_ckpt_best.pth').resolve()),
-                    detection_model_name="animal"
-                )
 
         self.face_recognition = FaceRecognition()
 
@@ -68,10 +63,7 @@ class PrecisionProcessor:
             detection_model_name = data.get("detection_model_name")
             face_detection = None
             if detection_model_name == "person":
-                face_detection = self.person_detection
-
-            elif detection_model_name == "animal":
-                face_detection= self.animal_detection
+                face_detection = self.face_detection
 
             process_core(
                 data,

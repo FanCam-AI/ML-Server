@@ -5,12 +5,21 @@ from config import settings
 import ray
 import uvicorn
 import asyncio
-
+import torch
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 ray.init(ignore_reinit_error=True)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-precision_workers = [PrecisionProcessor.remote() for _ in range(settings.PRECISION_WORKER_COUNT)]
-normal_workers = [NormalProcessor.remote() for _ in range(settings.NORMAL_WORKER_COUNT)]
+if settings.SERVERLESS_ENVIRONMENT:
+    if device == "cpu":
+        normal_workers = [NormalProcessor.remote() for _ in range(settings.NORMAL_WORKER_COUNT)]
+    elif device == "cuda":
+        precision_workers = [PrecisionProcessor.remote() for _ in range(settings.PRECISION_WORKER_COUNT)]
+
+else:
+    normal_workers = [NormalProcessor.remote() for _ in range(settings.NORMAL_WORKER_COUNT)]
+    precision_workers = [PrecisionProcessor.remote() for _ in range(settings.PRECISION_WORKER_COUNT)]
+
 
 
 def verify_api_key(authorization: str = Header(None)):
