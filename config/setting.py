@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     PORT_HEALTH:int
     NORMAL_WORKER_COUNT:int = 5
     PRECISION_WORKER_COUNT:int = 4
-    RUNPOD_API_KEY:str
+    API_KEY:str
+    SERVERLESS_ENVIRONMENT:bool = True
 
 
     # pydantic v2 config
