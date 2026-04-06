@@ -41,7 +41,7 @@ def verify_api_key(authorization: str = Header(None)):
             detail="Invalid Authorization format"
         )
 
-    if token != settings.RUNPOD_API_KEY:
+    if token != settings.API_KEY:
         raise HTTPException(
             status_code=401,
             detail="Invalid API key"
