@@ -23,6 +23,9 @@ else:
 
 
 def verify_api_key(authorization: str = Header(None)):
+    if settings.SERVERLESS_ENVIRONMENT:
+        return None
+
     if not authorization:
         raise HTTPException(
             status_code=401,
