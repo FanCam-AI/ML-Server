@@ -1,5 +1,6 @@
 import httpx
 from httpx import Timeout
+import time
 
 API_URL = "https://fancamai.com/result/save_result"
 

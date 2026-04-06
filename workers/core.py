@@ -13,19 +13,22 @@ def process_core(
     fernet=None
 ):
     temp_paths = None
-
-    video_key = data.get("video_key")
-    target_image_keys = data.get("target_image_keys")
-    spot_list = data.get("spot_list")
-    video_or_gif = data.get("video_or_gif")
-    detection_model_name = data.get("detection_model_name")
-    drag_box = data.get("drag_box")
-    tracking_mode = data.get("tracking_mode")
-    encrypted_token = data.get("encrypted_token")
-    user_token = fernet.decrypt(encrypted_token.encode()).decode()
-    current_user_id = call_get_current_user_id_api(user_token=user_token)
+    current_user_id = None
+    video_key = None
+    target_image_keys = None
 
     try:
+        video_key = data.get("video_key")
+        target_image_keys = data.get("target_image_keys")
+        spot_list = data.get("spot_list")
+        video_or_gif = data.get("video_or_gif")
+        detection_model_name = data.get("detection_model_name")
+        drag_box = data.get("drag_box")
+        tracking_mode = data.get("tracking_mode")
+        encrypted_token = data.get("encrypted_token")
+        user_token = fernet.decrypt(encrypted_token.encode()).decode()
+        current_user_id = call_get_current_user_id_api(user_token=user_token)
+
         temp_paths = download_r2_keys_to_temp(
             r2_client=r2_client,
             bucket_name=settings.R2_BUCKET_NAME,

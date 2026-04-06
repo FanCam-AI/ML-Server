@@ -305,7 +305,7 @@ class Tracking:
                                 # (선택) 정수 변환
                                 resized_init_rect = list(map(int, resized_init_rect))
                             scale = 0.6
-                            portrait_scale = 0.4
+                            portrait_scale = 0.6
                             print("Init bbox:", resized_init_rect)
                             print("Image shape:", init_img.shape)
 
