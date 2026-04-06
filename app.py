@@ -11,9 +11,9 @@ ray.init(ignore_reinit_error=True)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if settings.SERVERLESS_ENVIRONMENT:
-    if device == "cpu":
+    if device.type == "cpu":
         normal_workers = [NormalProcessor.remote() for _ in range(settings.NORMAL_WORKER_COUNT)]
-    elif device == "cuda":
+    elif device.type == "cuda":
         precision_workers = [PrecisionProcessor.remote() for _ in range(settings.PRECISION_WORKER_COUNT)]
 
 else:
