@@ -283,7 +283,6 @@ class Tracking:
                             init_rect = list(init_rect)
                             h_img, w_img = init_img.shape[:2]
                             resized_init_rect = self.resize_tracker_bbox(init_rect, w_img, h_img)
-                            # ✅ drag_box가 있을 때 bbox 크기 강제 통일
                             if drag_box is not None:
                                 x, y, w, h = init_rect
 
@@ -302,7 +301,6 @@ class Tracking:
                                     new_h
                                 ]
 
-                                # (선택) 정수 변환
                                 resized_init_rect = list(map(int, resized_init_rect))
                             scale = 0.6
                             portrait_scale = 0.6
@@ -475,10 +473,25 @@ class Tracking:
                 resized_box = self.resize_tracker_bbox(box, w_img, h_img)
 
             if activate_tracking == False:
-                resized_box = center_resized_box
+                if drag_box is not None:
+                    x, y, w, h = drag_box
+                    cx = x + w / 2
+                    cy = y + h / 2
+
+                    new_w = drag_box[2]
+                    new_h = drag_box[3]
+
+                    resized_rect = [
+                        cx - new_w / 2,
+                        cy - new_h / 2,
+                        new_w,
+                        new_h
+                    ]
+                    resized_box = list(map(int, resized_rect))
+                else:
+                    resized_box = center_resized_box
 
             avg_height_range, avg_width_range, left, right, top, bottom = self.compute_average_move(resized_box)
-
             result_img = img[avg_height_range[0]:avg_height_range[1], avg_width_range[0]:avg_width_range[1]].copy()
 
             result_img = cv2.resize(result_img, self.output_size)
@@ -496,6 +509,7 @@ class Tracking:
 
             if current_frame == end_frame:
                 break
+
         if visualize:
             cv2.destroyAllWindows()
 
