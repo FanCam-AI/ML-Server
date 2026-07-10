@@ -3,7 +3,7 @@ services:
     image: fancamai-ml-server:latest
     container_name: app
     restart: unless-stopped
-    shm_size: 6g
+    shm_size: 7g
     gpus: all
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/gcloud/application_default_credentials.json
