@@ -29,4 +29,4 @@ COPY . /app
 EXPOSE 8080
 
 # Run the application
-CMD ["python", "video_processing_tasks.py"]
+CMD ["python", "handler.py"]

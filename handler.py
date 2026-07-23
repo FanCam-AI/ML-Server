@@ -6,11 +6,13 @@ import boto3
 from cryptography.fernet import Fernet
 import runpod
 from config import settings
+import torch
 
 
 def process_result(data):
     temp_paths = None
     face_detection = None
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     video_key = data.get("video_key")
     target_image_keys = data.get("target_image_keys")
     spot_list = data.get("spot_list")
@@ -38,18 +40,6 @@ def process_result(data):
         aws_secret_access_key=settings.R2_SECRET_KEY,
         region_name="auto",
     )
-    if tracking_mode == "precision":
-        download_saved_models_from_r2(
-            r2_client=r2_client,
-            bucket_name=settings.R2_BUCKET_NAME,
-            download_path="tracking/saved_models"
-        )
-
-        download_dino_v2_base_from_r2(
-            r2_client=r2_client,
-            bucket_name=settings.R2_BUCKET_NAME,
-            download_path="ml_service/dinov2-base"
-        )
 
     try:
         tracking = None
@@ -61,40 +51,56 @@ def process_result(data):
         )
         video_path = temp_paths["video_path"]
         target_image_paths = temp_paths["image_paths"]
-        if tracking_mode == "precision":
-            from tracking import OSTrackTracker
 
-            if detection_model_name == "person":
-                face_detection = FaceDetection(
-                    detection_model_path='tracking/saved_models/person_ckpt_best.pth',
-                    detection_model_name=detection_model_name
-                )
-            elif detection_model_name == "animal":
-                face_detection = FaceDetection(
-                    detection_model_path='tracking/saved_models/animal_ckpt_best.pth',
-                    detection_model_name=detection_model_name
-                )
-            face_recognition = FaceRecognition()
 
-            tracking = Tracking(
-                tracker=OSTrackTracker(),
-                video_path=video_path,
-                query_image_paths=target_image_paths,
-                face_detection=face_detection,
-                face_recognition=face_recognition,
-                detection_model_name=detection_model_name,
-                redis_client=redis_client
-            )
-        elif tracking_mode == "normal":
-            tracking = Tracking(
-                tracker=None,
-                video_path=video_path,
-                query_image_paths=target_image_paths,
-                face_detection=None,
-                face_recognition=None,
-                detection_model_name=detection_model_name,
-                redis_client=redis_client
-            )
+        if settings.SERVERLESS_ENVIRONMENT:
+            if device == "cpu":
+                tracking = Tracking(
+                    tracker=None,
+                    video_path=video_path,
+                    query_image_paths=target_image_paths,
+                    face_detection=None,
+                    face_recognition=None,
+                    detection_model_name=detection_model_name,
+                    redis_client=redis_client
+                )
+            elif device == "cuda":
+                download_saved_models_from_r2(
+                    r2_client=r2_client,
+                    bucket_name=settings.R2_BUCKET_NAME,
+                    download_path="tracking/saved_models"
+                )
+
+                download_dino_v2_base_from_r2(
+                    r2_client=r2_client,
+                    bucket_name=settings.R2_BUCKET_NAME,
+                    download_path="ml_service/dinov2-base"
+                )
+
+                from tracking import OSTrackTracker
+
+                if detection_model_name == "person":
+                    face_detection = FaceDetection(
+                        detection_model_path='tracking/saved_models/person_ckpt_best.pth',
+                        detection_model_name=detection_model_name
+                    )
+                elif detection_model_name == "animal":
+                    face_detection = FaceDetection(
+                        detection_model_path='tracking/saved_models/animal_ckpt_best.pth',
+                        detection_model_name=detection_model_name
+                    )
+                face_recognition = FaceRecognition()
+
+                tracking = Tracking(
+                    tracker=OSTrackTracker(),
+                    video_path=video_path,
+                    query_image_paths=target_image_paths,
+                    face_detection=face_detection,
+                    face_recognition=face_recognition,
+                    detection_model_name=detection_model_name,
+                    redis_client=redis_client
+                )
+
 
 
         make_result = MakeResult(tracking, video_path, spot_list, current_user_id, r2_client, settings.R2_BUCKET_NAME, tracking_mode, drag_box, redis_client)
