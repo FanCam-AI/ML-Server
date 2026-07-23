@@ -24,10 +24,9 @@ RUN pip install torch==2.7.1+cu118 torchvision==0.22.1+cu118 --index-url https:/
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-EXPOSE 80
-
 COPY . /app
 
+EXPOSE 8080
 
 # Run the application
-CMD ["python", "app.py"]
+CMD ["python", "video_processing_tasks.py"]
