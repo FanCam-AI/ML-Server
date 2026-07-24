@@ -27,7 +27,7 @@ def process_result(data):
 
     redis_client = redis.Redis(
         host=settings.REDIS_CLOUD_HOST,
-        port=19268,
+        port=settings.REDIS_CLOUD_PORT,
         decode_responses=True,
         username="default",
         password=settings.REDIS_CLOUD_PASSWORD,

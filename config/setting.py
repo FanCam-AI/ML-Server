@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     R2_ENDPOINT_URL: str
     REDIS_CLOUD_HOST: str
     REDIS_CLOUD_PASSWORD: str
+    REDIS_CLOUD_PORT: int
     FERNET_KEY: str
     PORT:int
     PORT_HEALTH:int
