@@ -9,10 +9,11 @@ from config import settings
 import torch
 from infra import r2_client, redis_client
 
-def process_result(data):
+def process_result(request):
     temp_paths = None
     face_detection = None
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data = request.get("input", {})
     video_key = data.get("video_key")
     target_image_keys = data.get("target_image_keys")
     spot_list = data.get("spot_list")
