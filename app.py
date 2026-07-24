@@ -8,7 +8,7 @@ import asyncio
 import torch
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 ray.init(ignore_reinit_error=True)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 if settings.SERVERLESS_ENVIRONMENT:
     if device == "cpu":
