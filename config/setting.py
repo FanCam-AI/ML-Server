@@ -11,8 +11,9 @@ class Settings(BaseSettings):
     REDIS_CLOUD_HOST: str
     REDIS_CLOUD_PASSWORD: str
     FERNET_KEY: str
-    PORT:int
-    PORT_HEALTH:int
+    PORT: int
+    PORT_HEALTH: int
+    REDIS_CLOUD_PORT: int
     NORMAL_WORKER_COUNT:int = 5
     PRECISION_WORKER_COUNT:int = 4
     API_KEY:str
