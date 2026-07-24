@@ -7,7 +7,7 @@ from cryptography.fernet import Fernet
 import runpod
 from config import settings
 import torch
-
+from infra import r2_client, redis_client
 
 def process_result(data):
     temp_paths = None
@@ -24,22 +24,6 @@ def process_result(data):
     f = Fernet(settings.FERNET_KEY)
     user_token = f.decrypt(encrypted_token.encode()).decode()
     current_user_id = call_get_current_user_id_api(user_token=user_token)
-
-    redis_client = redis.Redis(
-        host=settings.REDIS_CLOUD_HOST,
-        port=settings.REDIS_CLOUD_PORT,
-        decode_responses=True,
-        username="default",
-        password=settings.REDIS_CLOUD_PASSWORD,
-    )
-
-    r2_client = boto3.client(
-        "s3",
-        endpoint_url=settings.R2_ENDPOINT_URL,
-        aws_access_key_id=settings.R2_ACCESS_KEY,
-        aws_secret_access_key=settings.R2_SECRET_KEY,
-        region_name="auto",
-    )
 
     try:
         tracking = None

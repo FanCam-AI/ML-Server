@@ -7,39 +7,23 @@ from config import settings
 import ray
 from .core import process_core
 from pathlib import Path
-
+from infra import r2_client, redis_client
 
 @ray.remote(num_cpus=1, num_gpus=0.25, max_concurrency=10)
 class PrecisionProcessor:
     def __init__(self):
         self.f = Fernet(settings.FERNET_KEY)
         self.busy = False
-
-        self.redis_client = redis.Redis(
-            host=settings.REDIS_CLOUD_HOST,
-            port=settings.REDIS_CLOUD_PORT,
-            decode_responses=True,
-            username="default",
-            password=settings.REDIS_CLOUD_PASSWORD,
-        )
-
-        self.r2_client = boto3.client(
-            "s3",
-            endpoint_url=settings.R2_ENDPOINT_URL,
-            aws_access_key_id=settings.R2_ACCESS_KEY,
-            aws_secret_access_key=settings.R2_SECRET_KEY,
-            region_name="auto",
-        )
         self.base_dir = Path(__file__).parent.parent  # workers/ 상위 = ML-Server
 
         download_saved_models_from_r2(
-            r2_client=self.r2_client,
+            r2_client=r2_client,
             bucket_name=settings.R2_BUCKET_NAME,
             download_path="tracking/saved_models"
         )
 
         download_dino_v2_base_from_r2(
-            r2_client=self.r2_client,
+            r2_client=r2_client,
             bucket_name=settings.R2_BUCKET_NAME,
             download_path="ml_service/dinov2-base"
         )
@@ -67,8 +51,8 @@ class PrecisionProcessor:
 
             process_core(
                 data,
-                redis_client=self.redis_client,
-                r2_client=self.r2_client,
+                redis_client=redis_client,
+                r2_client=r2_client,
                 tracker=self.tracker,
                 face_detection=face_detection,
                 face_recognition=self.face_recognition,
