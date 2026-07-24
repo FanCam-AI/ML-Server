@@ -4,7 +4,7 @@ from config import settings
 def get_r2_client():
     r2 = boto3.client(
         "s3",
-        endpoint_url=settings.R2_ENDPOINT,
+        endpoint_url=settings.R2_ENDPOINT_URL,
         aws_access_key_id=settings.R2_ACCESS_KEY,
         aws_secret_access_key=settings.R2_SECRET_KEY,
         region_name="auto",
