@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     PORT: int
     PORT_HEALTH: int
     REDIS_CLOUD_PORT: int
-    NORMAL_WORKER_COUNT:int = 5
-    PRECISION_WORKER_COUNT:int = 4
+    NORMAL_WORKER_COUNT:int = 15
+    PRECISION_WORKER_COUNT:int = 15
     API_KEY:str
     SERVERLESS_ENVIRONMENT:bool = True
 
